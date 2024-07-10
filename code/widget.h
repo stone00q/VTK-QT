@@ -24,6 +24,7 @@ private slots:
     void TButton_clicked();
     void XButton_clicked();
     void CutPlaneButton_clicked();
+    void ColseCutWidget_clicked();
     void CutButton_clicked();
     void StreamSeedButton_clicked();
     void StreamTraceButton_clicked();

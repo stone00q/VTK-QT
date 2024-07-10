@@ -18,8 +18,8 @@ vtkTecplotWidget::vtkTecplotWidget(QWidget *parent)
 
     //获取交互器
     this->qvtkInteractor=this->interactor();
-    this->cutPlaneWidget = vtkSmartPointer<vtkImplicitPlaneWidget2>::New();
-    this->cutPlaneRep=vtkSmartPointer<vtkImplicitPlaneRepresentation>::New();
+    //this->cutPlaneWidget = vtkSmartPointer<vtkImplicitPlaneWidget2>::New();
+    //this->cutPlaneRep=vtkSmartPointer<vtkImplicitPlaneRepresentation>::New();
 
     this->seedSphereWidget=vtkSmartPointer<vtkSphereWidget>::New();
     seedPointNum=100;
@@ -54,6 +54,8 @@ void vtkTecplotWidget::SetInputData(vtkMultiBlockDataSet* inputData)
     //开始basic渲染
     auto basicMapper=vtkSmartPointer<vtkDataSetMapper>::New();
     auto basicActor=vtkSmartPointer<vtkActor>::New();
+    this->actorsList["basicActor"]=basicActor;
+    this->actorsStatus["basicActor"]=true;
     this->actorsMap["basicActor"]=basicActor;
     this->mappersMap["basicMapper"]=basicMapper;
     basicMapper->SetInputData(unstructuredGrid);
@@ -194,23 +196,20 @@ void vtkTecplotWidget::SetColorMappingFlag(bool flag)//对于颜色映射paravie
     }
 }
 
-void vtkTecplotWidget::SetCutPlane()
+/*void vtkTecplotWidget::ShowCutPlaneWidget(bool flag)
 {
-    this->cutPlaneRep->SetPlaceFactor(1.0);
-    this->cutPlaneRep->PlaceWidget(this->unstructuredGrid->GetBounds());
-    //this->cutPlaneRep->SetHandleSize(100);
-    this->cutPlaneRep->SetHandleColor(1.0,0.0,0.0);
-    this->cutPlaneRep->SetEdgeColor(1.0,0.0,0.0);
-    this->cutPlaneWidget->SetInteractor(this->qvtkInteractor);
-    this->cutPlaneWidget->SetRepresentation(this->cutPlaneRep);
-    //this->cutPlaneWidget->SetRepresentationToSurface();
-    //this->cutPlaneWidget->SetResolution(1000);
-    //this->cutPlaneWidget->SetRepresentationToOutline();
+    vtkSmartPointer<vtkImplicitPlaneWidget2> cutPlaneWidget;
+    //如果要打开widget，并且widget之前没有，需要新建widget并加入列表
+    if(flag){
+        if(widgetList.count("cutPlaneWidget")==0){
 
-    //激活widget
-    this->cutPlaneWidget->On();
-    //更新渲染
-    this->renderWindow->Render();
+
+        }else
+        {//如果已经有widget了，就设置可见
+            cutPlaneWidget=widgetList["cutPlaneWidget"];
+        }
+
+    }
 }
 
 void vtkTecplotWidget::SetCutPlaneFlag(bool flag)
@@ -240,8 +239,57 @@ void vtkTecplotWidget::SetCutPlaneFlag(bool flag)
         basicActor->SetVisibility(0);
         this->renderer->Render();
     }
+}*/
+
+void vtkTecplotWidget::SetCutPlaneWidget(bool flag)
+{//所有cut相关操作都需要先确认是否设置的输入
+    if(!this->cutPlane.GetInputdataStatus())
+    {
+        this->cutPlane.SetInputData(this->unstructuredGrid,this->qvtkInteractor,this->renderer);
+    }
+    if(flag)
+    {
+        this->cutPlane.SetCutPlaneWidget();
+    }else{
+        this->cutPlane.CloseCutPlaneWidget();
+    }
+    this->renderer->Render();
 }
 
+QString vtkTecplotWidget::AddCutPlane(QString name)
+{
+    if(!this->cutPlane.GetInputdataStatus())
+    {
+        this->cutPlane.SetInputData(this->unstructuredGrid,this->qvtkInteractor,this->renderer);
+    }
+    std::string tmpName=name.toStdString();
+    this->cutPlane.AddCutPlane(tmpName,actorsList,actorsStatus);
+    this->renderer->Render();
+    return name.fromStdString(tmpName);
+}
+
+bool vtkTecplotWidget::SetCutPlaneVisible(QString name,bool flag)
+{
+    std::string tmpName = name.toStdString();
+    if(actorsList.count(tmpName) == 0) return false;
+    vtkActor* actor = actorsList[tmpName];  //?不new真的可以用吗
+    actor->SetVisibility(flag);
+    actorsStatus[tmpName] = flag;
+    this->renderer->Render();
+    return true;
+}
+
+bool vtkTecplotWidget::DelCutPlane(QString name)
+{
+    std::string tmpName = name.toStdString();
+    if(actorsList.count(tmpName) == 0) return false;
+    vtkActor* actor = actorsList[tmpName];
+    this->renderer->RemoveActor(actor);
+    this->actorsList.erase(tmpName);
+    this->actorsStatus.erase(tmpName);
+    this->renderer->Render();
+    return true;
+}
 void vtkTecplotWidget::SetStreamTrancerSeed(int pointNum)
 {
     this->seedPointNum=pointNum;
@@ -291,4 +339,102 @@ void vtkTecplotWidget::SetStreamTrancerApply()
     this->renderer->AddActor(streamActor);
     this->renderer->Render();
 
+}
+
+
+
+
+
+
+
+
+
+
+
+/*************************************************************************************************
+ *************************************************************************************************
+ *************************************************************************************************
+ *********************class vtkCutPlane的实现 ******************************************
+ *************************************************************************************************
+ *************************************************************************************************
+ **************************************************************************************************/
+bool vtkCutPlane::GetInputdataStatus()
+{
+    return this->dataStatus;
+}
+void vtkCutPlane::SetInputData(vtkUnstructuredGrid* inputData,QVTKInteractor* qvtkInteractor,vtkRenderer* renderer)
+{
+    this->ug = inputData;
+    this->qvtkInteractor=qvtkInteractor;
+    this->renderer=renderer;
+
+    this->dataStatus=true;
+}
+void vtkCutPlane::SetCutPlaneWidget()
+{
+    if(!this->dataStatus){
+        std::cerr << "Please set input data first." << std::endl;
+        return;
+    }
+    //第一次打开widget需要新建widget和plane样例,设置并绑定
+    if(!this->widgetStatus)
+    {
+        this->cutPlaneWidget = vtkSmartPointer<vtkImplicitPlaneWidget2>::New();
+        this->cutPlaneRep = vtkSmartPointer<vtkImplicitPlaneRepresentation>::New();
+
+        this->cutPlaneRep->SetPlaceFactor(1.0);
+        this->cutPlaneRep->PlaceWidget(this->ug->GetBounds());
+        //this->cutPlaneRep->SetHandleSize(100);
+        this->cutPlaneRep->SetHandleColor(1.0,0.0,0.0);
+        this->cutPlaneRep->SetEdgeColor(1.0,0.0,0.0);
+        this->cutPlaneWidget->SetInteractor(this->qvtkInteractor);
+        this->cutPlaneWidget->SetRepresentation(this->cutPlaneRep);
+        //this->cutPlaneWidget->SetRepresentationToSurface();
+        //this->cutPlaneWidget->SetResolution(1000);
+        //this->cutPlaneWidget->SetRepresentationToOutline();
+        //激活widget
+        this->cutPlaneWidget->On();
+
+        this->widgetStatus = true;
+    }
+    this->cutPlaneWidget->SetEnabled(1);
+    //需要考虑每次打开widget是否得归位
+}
+void vtkCutPlane::CloseCutPlaneWidget()
+{
+    this->cutPlaneWidget->SetEnabled(0);//??需要看下可以吗？
+}
+void vtkCutPlane::DeletCutPlaneWidget()
+{
+    this->cutPlaneWidget->Off();
+    this->widgetStatus = false;
+}
+void vtkCutPlane::AddCutPlane(std::string& name,std::map<std::string,vtkActor*>& actorsList,std::map<std::string,bool>& actorsStatus)
+{
+    //如果为输入命名，则默认命名方法
+    if(name==""){
+        cutActorNum++;
+        name="Slice"+std::to_string(cutActorNum);
+    }
+    vtkSmartPointer<vtkPlane> cutPlane = vtkSmartPointer<vtkPlane>::New();
+    vtkSmartPointer<vtkCutter> cutter = vtkSmartPointer<vtkCutter>::New();
+    vtkSmartPointer<vtkPolyDataMapper> cutMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    vtkSmartPointer<vtkActor> cutActor = vtkSmartPointer<vtkActor>::New();
+    this->cutPlaneRep->GetPlane(cutPlane);
+    cutter->SetCutFunction(cutPlane);
+    cutter->SetInputData(this->ug);
+    cutter->Update();
+    cutMapper->SetInputConnection(cutter->GetOutputPort());
+    cutActor->SetMapper(cutMapper);
+    this->renderer->AddActor(cutActor);
+
+    //在将新的actor添加进actorlist前，默认关闭其他所有actor的显示
+    for(auto& pair: actorsList)
+    {
+        vtkActor* actor = pair.second;
+        actor->VisibilityOff();
+        actorsStatus[pair.first] = false;
+    }
+    actorsList[name] = cutActor;
+    actorsStatus[name] = true;
 }

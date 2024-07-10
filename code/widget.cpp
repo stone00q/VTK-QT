@@ -50,7 +50,8 @@ Widget::Widget(QWidget *parent)
     QPushButton* SolidColorButton = new QPushButton("Solid Color: Green", this);
     QPushButton* TButton = new QPushButton("Variable: T", this);
     QPushButton* XButton = new QPushButton("Variable: X", this);
-    QPushButton* CutPlaneButton = new QPushButton("CutPlane", this);
+    QPushButton* CutPlaneButton = new QPushButton("CutWidget", this);
+    QPushButton* ColseCutWidget = new QPushButton("Close cutwidget", this);
     QPushButton* CutButton = new QPushButton("Cut", this);
     QPushButton* StreamSeedButton = new QPushButton("StreamSeed: point cloud", this);
     QPushButton* StreamTraceButton =new QPushButton("StreamTrace",this);
@@ -59,6 +60,7 @@ Widget::Widget(QWidget *parent)
     layout->addWidget(TButton);
     layout->addWidget(XButton);
     layout->addWidget(CutPlaneButton);
+    layout->addWidget(ColseCutWidget);
     layout->addWidget(CutButton);
     layout->addWidget(StreamSeedButton);
     layout->addWidget(StreamTraceButton);
@@ -75,6 +77,7 @@ Widget::Widget(QWidget *parent)
     connect(TButton, &QPushButton::clicked, this, &Widget::TButton_clicked);
     connect(XButton, &QPushButton::clicked, this, &Widget::XButton_clicked);
     connect(CutPlaneButton,&QPushButton::clicked,this,&Widget::CutPlaneButton_clicked);
+    connect(ColseCutWidget,&QPushButton::clicked,this,&Widget::ColseCutWidget_clicked);
     connect(CutButton,&QPushButton::clicked,this,&Widget::CutButton_clicked);
     connect(StreamSeedButton,&QPushButton::clicked,this,&Widget::StreamSeedButton_clicked);
     connect(StreamTraceButton,&QPushButton::clicked,this,&Widget::StreamTraceButton_clicked);
@@ -110,11 +113,16 @@ void Widget::XButton_clicked()
 }
 void Widget::CutPlaneButton_clicked()
 {
-    tecplotWidget->SetCutPlane();
+    tecplotWidget->SetCutPlaneWidget();
+}
+void Widget:: ColseCutWidget_clicked()
+{
+    tecplotWidget->SetCutPlaneWidget(false);
 }
 void Widget::CutButton_clicked()
 {
-    tecplotWidget->SetCutPlaneFlag(true);
+    QString tmpName = tecplotWidget->AddCutPlane();
+    std::cout << endl <<"cutplane name:" << tmpName.toStdString();
 }
 void Widget::StreamSeedButton_clicked()
 {
