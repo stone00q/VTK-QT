@@ -327,6 +327,7 @@ vtkzlib-9.3.lib\
 }
 
 SOURCES += \
+    class_reader.cpp \
     main.cpp \
     mainwindow.cpp \
     vtkTecplotWidget.cpp \
@@ -336,7 +337,7 @@ HEADERS += \
     class1_colormap.h \
     class_reader.h \
     mainwindow.h \
-    reader2.h \
+    testwidget2.h \
     vtkTecplotWidget.h \
     widget.h
 

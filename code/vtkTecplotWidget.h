@@ -35,8 +35,8 @@
 #include <QVTKOpenGLNativeWidget.h>
 
 #include <vtkAutoInit.h>
-VTK_MODULE_INIT(vtkRenderingOpenGL2)
-VTK_MODULE_INIT(vtkInteractionStyle)
+//VTK_MODULE_INIT(vtkRenderingOpenGL2)
+//VTK_MODULE_INIT(vtkInteractionStyle)
 class vtkCutPlane
 {//关于cut只有一个cutplanewidget，但是可以创建多个actor。注意：整个过程不包括更新渲染
 public:
@@ -61,6 +61,20 @@ private:
     //bool cutterStatus = false; //是否有新建过cutter
     int cutActorNum = 0; //有多少个默认名字的actor,只增不减，不重复命名
 };
+class vtkColorMap
+{
+public:
+    vtkColorMap(){}
+    ~vtkColorMap(){}
+    bool SetColorMapObject(std::string name, std::map<std::string,vtkActor*>& actorsList);  //选中操作对象
+    bool SetSolidColor(std::map<std::string,vtkScalarBarActor*>& barsList, QColor RGBA = QColorConstants::LightGray);
+    bool SetColorMapVariable(std::string selectedVar, std::map<std::string,vtkSmartPointer<vtkLookupTable> >& lutsList, std::map<std::string,vtkScalarBarActor*>& barsList,vtkRenderer* renderer);
+    // barStaus负责记录是否是第一次打开
+private:
+    vtkActor* selectedActor;
+    std::string objName;
+    bool selectedStatus = false; //记录是否有设置过选中操作对象，没有就不能setsolidcolor
+};
 
 class vtkTecplotWidget:public QVTKOpenGLNativeWidget
 {
@@ -79,27 +93,22 @@ public:
     QColor GetBackgroundColor();
 
     /***设置basicActor、basicMapper的颜色***/
-    void SetSolidColor(QColor  RGBA = QColorConstants::LightGray);
+
     QColor GetSolidColor();
     void SetSolidVisible(bool flag);
 
     /***设置颜色映射变量***/
-    void SetColorMapVariable(std::string selectedVar);
+    bool SetColorMapObject(QString name); //输入进行颜色映射的actor名字
+    void SetSolidColor(QColor  RGBA = QColorConstants::LightGray);
+    bool SetColorMapVariable(QString name); //进行颜色映射
+
+   // void SetColorMapVariable(std::string selectedVar);
     void SetColorMappingFlag(bool flag = false);
-
     //Cut
-    void SetCutPlane();
-    void SetCutApply();
-    void SetCutPlaneFlag(bool flag=true);
-    bool GetCutPlaneVisiable();
-
-
     void SetCutPlaneWidget(bool flag=true);
     QString AddCutPlane(QString name="");//默认命名方式，返回名字cutPlane*,并且其他actor都会设置为不可见
     bool SetCutPlaneVisible(QString name, bool flag=true);
     bool DelCutPlane(QString name);
-
-
     //void SetCutPlane(QPoint origin, QVector normal);
     //QPoint GetCutOrigin();
     //QVector GetCutNormal();
@@ -141,14 +150,14 @@ private:
     //actorsststus保存actor状态，1可见，0不可见
     std::map<std::string,vtkActor*> actorsList;
     std::map<std::string,bool> actorsStatus;
-    std::map<std::string,vtkInteractorObserver*> widgetList;
+    std::map<std::string,vtkSmartPointer<vtkLookupTable> > lutsList;
+    std::map<std::string,vtkScalarBarActor*> barsList;
 
     int varNum;
     int seedPointNum;
 
     vtkCutPlane cutPlane;
-
-
+    vtkColorMap colorMap;
 
 };
 

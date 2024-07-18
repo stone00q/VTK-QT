@@ -13,7 +13,7 @@ vtkTecplotWidget::vtkTecplotWidget(QWidget *parent)
 
     this->renderer = vtkSmartPointer<vtkRenderer>::New();
     this->renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    renderWindow->AddRenderer(renderer);
+    this->renderWindow->AddRenderer(renderer);
     this->setRenderWindow(renderWindow);
 
     //获取交互器
@@ -56,8 +56,8 @@ void vtkTecplotWidget::SetInputData(vtkMultiBlockDataSet* inputData)
     auto basicActor=vtkSmartPointer<vtkActor>::New();
     this->actorsList["basicActor"]=basicActor;
     this->actorsStatus["basicActor"]=true;
-    this->actorsMap["basicActor"]=basicActor;
-    this->mappersMap["basicMapper"]=basicMapper;
+    //this->actorsMap["basicActor"]=basicActor;
+    //this->mappersMap["basicMapper"]=basicMapper;
     basicMapper->SetInputData(unstructuredGrid);
     basicActor->SetMapper(basicMapper);
     this->renderer->AddActor(basicActor);
@@ -90,7 +90,7 @@ QColor vtkTecplotWidget::GetBackgroundColor()
     return QColor(r, g, b);
 }
 
-void vtkTecplotWidget::SetSolidColor(QColor  RGBA)
+/*void vtkTecplotWidget::SetSolidColor(QColor  RGBA)
 {
     //颜色转换
     int r=RGBA.red();
@@ -104,7 +104,7 @@ void vtkTecplotWidget::SetSolidColor(QColor  RGBA)
     vtkProperty* property=actor->GetProperty();
     property->SetColor(normalizedR,normalizedG,normalizedB);
     this->renderWindow->Render();
-}
+}*/
 
 QColor vtkTecplotWidget::GetSolidColor()
 {
@@ -117,27 +117,10 @@ QColor vtkTecplotWidget::GetSolidColor()
     return QColor(r, g, b);
 }
 
-void vtkTecplotWidget::SetColorMapVariable(std::string selectedVar)
+/*void vtkTecplotWidget::SetColorMapVariable(std::string selectedVar)
 {
-    /*
-    int selectedId=-1;
-    for (int i = 0; i < varNum; i++)
-    {
-        if (this->pointData->GetArrayName(i) == selectedVar) {
-            selectedId = i;
-            break;
-        }
-    }
-    if(selectedId==-1)
-    {
-        std::cerr << "Illegal variable name" << std::endl;
-    }
-    //将选中变量设置为标量
-    this->scalars=this->pointData->GetArray(selectedId);
-    this->unstructuredGrid->GetPointData()->SetScalars(scalars);
-    */
     int selectedID = this->unstructuredGrid->GetPointData()->SetActiveScalars(selectedVar.c_str());
-     this->scalars=this->pointData->GetArray(selectedID);
+    this->scalars=this->pointData->GetArray(selectedID);
 
     //设置颜色映射相关
     if (lutsMap.find("basicLut") == lutsMap.end())
@@ -170,7 +153,7 @@ void vtkTecplotWidget::SetColorMapVariable(std::string selectedVar)
         mapper->SetLookupTable(basicLut);
         this->renderer->AddActor(basicScalarBarActor);
     }
-}
+}*/
 
 void vtkTecplotWidget::SetColorMappingFlag(bool flag)//对于颜色映射paraview一remove就是整个actor remove
 {
@@ -196,50 +179,24 @@ void vtkTecplotWidget::SetColorMappingFlag(bool flag)//对于颜色映射paravie
     }
 }
 
-/*void vtkTecplotWidget::ShowCutPlaneWidget(bool flag)
+
+bool vtkTecplotWidget::SetColorMapObject(QString name)
 {
-    vtkSmartPointer<vtkImplicitPlaneWidget2> cutPlaneWidget;
-    //如果要打开widget，并且widget之前没有，需要新建widget并加入列表
-    if(flag){
-        if(widgetList.count("cutPlaneWidget")==0){
-
-
-        }else
-        {//如果已经有widget了，就设置可见
-            cutPlaneWidget=widgetList["cutPlaneWidget"];
-        }
-
-    }
+    std::string objName = name.toStdString();
+    return colorMap.SetColorMapObject(objName,this->actorsList);
 }
-
-void vtkTecplotWidget::SetCutPlaneFlag(bool flag)
+void vtkTecplotWidget::SetSolidColor(QColor RGBA)
 {
-    //第一次初始化
-    vtkSmartPointer<vtkPlane> cutPlane;
-    vtkSmartPointer<vtkCutter> cutter;
-    vtkSmartPointer<vtkPolyDataMapper> cutMapper;
-    vtkSmartPointer<vtkActor> cutActor;
-    if(flag&&actorsMap.find("cutActor")==actorsMap.end())
-    {
-        cutPlane=vtkSmartPointer<vtkPlane>::New();
-        this->cutPlaneRep->GetPlane(cutPlane);
-        cutter=vtkSmartPointer<vtkCutter>::New();
-        cutter->SetCutFunction(cutPlane);
-        cutter->SetInputData(this->unstructuredGrid);
-        cutter->Update();
-        cutMapper=vtkSmartPointer<vtkPolyDataMapper>::New();
-        cutMapper->SetInputConnection(cutter->GetOutputPort());
-
-        cutActor=vtkSmartPointer<vtkActor>::New();
-        this->actorsMap["cutActor"]=cutActor;
-        cutActor->SetMapper(cutMapper);
-        this->renderer->AddActor(cutActor);
-
-        auto basicActor=actorsMap["basicActor"];
-        basicActor->SetVisibility(0);
-        this->renderer->Render();
-    }
-}*/
+    colorMap.SetSolidColor(this->barsList, RGBA);
+    this->renderer->Render();
+}
+bool vtkTecplotWidget::SetColorMapVariable(QString name)
+{
+    std::string varName = name.toStdString();
+    bool flag = colorMap.SetColorMapVariable(varName,this->lutsList,this->barsList,this->renderer);
+    this->renderer->Render();
+    return flag;
+}
 
 void vtkTecplotWidget::SetCutPlaneWidget(bool flag)
 {//所有cut相关操作都需要先确认是否设置的输入
@@ -402,7 +359,7 @@ void vtkCutPlane::SetCutPlaneWidget()
 }
 void vtkCutPlane::CloseCutPlaneWidget()
 {
-    this->cutPlaneWidget->SetEnabled(0);//??需要看下可以吗？
+    this->cutPlaneWidget->SetEnabled(0);
 }
 void vtkCutPlane::DeletCutPlaneWidget()
 {
@@ -438,3 +395,96 @@ void vtkCutPlane::AddCutPlane(std::string& name,std::map<std::string,vtkActor*>&
     actorsList[name] = cutActor;
     actorsStatus[name] = true;
 }
+/*************************************************************************************************
+ *************************************************************************************************
+ *************************************************************************************************
+ *********************class vtkColorMap的实现 ******************************************
+ *************************************************************************************************
+ *************************************************************************************************
+ **************************************************************************************************/
+bool vtkColorMap::SetColorMapObject(std::string name, std::map<std::string,vtkActor*>& actorsList)
+{
+    /*for(auto pair:actorsList)
+    {
+        if(pair.first==name)
+        {
+            this->objName = name;
+            this->selectedActor = pair.second;
+            this->selectedStatus = true;
+            return true;
+        }
+    }
+    return false;
+    */
+    if(actorsList.count(name)==0)
+    {
+        return false;
+    }
+    this->objName = name;
+    this->selectedActor = actorsList[name];
+    this->selectedStatus = true;
+    return true;
+
+}
+bool vtkColorMap::SetSolidColor(std::map<std::string,vtkScalarBarActor*>& barsList, QColor RGBA)
+{
+    if(!selectedStatus) return false;
+    //颜色转换
+    int r=RGBA.red();
+    int g=RGBA.green();
+    int b=RGBA.blue();
+    double normalizedR = r / 255.0;
+    double normalizedG = g / 255.0;
+    double normalizedB = b / 255.0;
+    if(barsList.count(this->objName)!=0)
+    {//如果之前执行过颜色映射，需要关闭颜色映射、设置bar不可见
+        this->selectedActor->GetMapper()->ScalarVisibilityOff();
+        barsList[this->objName]->VisibilityOff();
+    }
+    vtkProperty* property=this->selectedActor->GetProperty();
+    property->SetColor(normalizedR,normalizedG,normalizedB);
+    return true;
+}
+bool vtkColorMap::SetColorMapVariable(std::string selectedVar, std::map<std::string,vtkSmartPointer<vtkLookupTable> >& lutsList, std::map<std::string,vtkScalarBarActor*>& barsList,vtkRenderer* renderer)
+{
+    if(!selectedStatus) return false;
+    //如果对于这个actor是第一次颜色映射，需要new个新的baractor和lookuptatle,并添加进renderer
+    if(lutsList.count(this->objName)==0){
+        vtkSmartPointer<vtkLookupTable> lut = vtkSmartPointer<vtkLookupTable>::New();
+        auto barActor = vtkSmartPointer<vtkScalarBarActor>::New();
+        lutsList[this->objName] = lut;
+        barsList[this->objName] = barActor;
+        renderer->AddActor2D(barActor);
+
+    }
+    auto lut = lutsList[this->objName];
+    auto barActor = barsList[this->objName];
+    vtkMapper* mapper= this->selectedActor->GetMapper();
+    vtkDataSet* dataSet = vtkDataSet::SafeDownCast(mapper->GetInput());
+    // 设置 Active Scalars
+    int selectedId = dataSet->GetPointData()->SetActiveScalars(selectedVar.c_str());
+    vtkDataArray* scalar = dataSet->GetPointData()->GetArray(selectedId);
+    lut->SetTableRange(scalar->GetRange());
+    lut->SetNumberOfColors(256);
+    lut->Build();
+    barActor->SetLookupTable(lut);
+    mapper->SetScalarRange(scalar->GetRange());
+    mapper->SetLookupTable(lut);
+
+    mapper->ScalarVisibilityOn();
+    barActor->VisibilityOn();
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -2,7 +2,6 @@
 #define WIDGET_H
 #include <QWidget>
 #include <QProcess>
-#include "class1_colormap.h"
 #include "vtkTecplotWidget.h"
 QT_BEGIN_NAMESPACE
 namespace Ui {
@@ -28,9 +27,13 @@ private slots:
     void CutButton_clicked();
     void StreamSeedButton_clicked();
     void StreamTraceButton_clicked();
+
+    void basicButton1_clicked();
+    void basicButton2_clicked();
+    void slice1Button1_clicked();
+    void slice1Button2_clicked();
 private:
     Ui::Widget *ui;
-    vtkColorMap colormap;
     vtkTecplotWidget* tecplotWidget;
 };
 #endif // WIDGET_H
