@@ -11,7 +11,7 @@
 #include <vtkPen.h>
 #include <vtkAxis.h>
 #include <vtkTextProperty.h>
-
+#include <vtkChartLegend.h>
 #include <vtkRenderer.h>
 
 #include <vtkRenderWindow.h>
@@ -29,8 +29,6 @@ public:
 
     void SetInputData(std::string fileName);
     std::vector<std::string> GetPropertiesName();
-    //bool SetBottomAxisProperty(const std::string& propertyName);  //x
-    //bool SetLeftAxisProperty(const std::string& propertyName);  //y
 
     void SetBottomAxisTitle(const std::string& title);
     void SetLeftAxisTitle(const std::string& title);
@@ -56,7 +54,6 @@ private:
     int lineNum = 0;
     /*int xID;
     int yID;*/
-    void AddLegendEntry(vtkPlot* plot, const std::string& xProperty, const std::string& yProperty);
 };
 
 #endif // VTKLINECHARTWIDGET_H

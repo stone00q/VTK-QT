@@ -13,8 +13,8 @@ VTK_MODULE_INIT(vtkInteractionStyle)
 VTK_MODULE_INIT(vtkRenderingContextOpenGL2)
 int main() {
 	vtkLineChartWidget lineChart;
-	lineChart.SetInputData(R"(test_untitled.csv)");
-	//lineChart.SetInputData(R"(D:\Project\VTK_QT\data\test.csv)");
+	//lineChart.SetInputData(R"(D:\Project\VTK_QT\data\test_untitled.csv)");
+	lineChart.SetInputData(R"(D:\Project\VTK_QT\data\test.csv)");
 	//查看列表有没有问题
 	std::vector<std::string> propertyList = lineChart.GetPropertiesName();
 	cout << endl << "可选变量如下："<<endl;
@@ -39,7 +39,7 @@ int main() {
 	lineChart.SetChartTitle(chartName);
 	int id1 = lineChart.AddPlot(xName1, yName1, 0);
 	int id2 = lineChart.AddPlot(xName2, yName2, 1);
-	lineChart.RemovePlot(id2);
+	//lineChart.RemovePlot(id2);
 	lineChart.ShowLineChart();
 	/************************************
 	*************下面开始渲染************

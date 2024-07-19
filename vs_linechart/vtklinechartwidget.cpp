@@ -16,7 +16,9 @@ vtkLineChartWidget::vtkLineChartWidget()
     //qvtkInteractor->Start();
     //暂时设置只添加一条线
     this->firstLine = this->chart->AddPlot(vtkChart::LINE);
-    this->propertyList.clear();
+    this->chart->SetShowLegend(true);
+    this->chart->GetLegend()->SetHorizontalAlignment(vtkChartLegend::RIGHT);
+    this->chart->GetLegend()->SetVerticalAlignment(vtkChartLegend::TOP);
 }
 
 vtkLineChartWidget::~vtkLineChartWidget()
@@ -69,36 +71,6 @@ std::vector<std::string> vtkLineChartWidget::GetPropertiesName()
     return this->propertyList;
 }
 
-//bool vtkLineChartWidget::SetBottomAxisProperty(const std::string& propertyName)
-//{
-//    int varNum = this->propertyList.size();
-//    for (int i = 0; i < varNum; i++) 
-//    {
-//        if (this->propertyList[i] == propertyName) {
-//            this->xID = i;
-//            axisStatus[0] = true;
-//            return true;
-//        }
-//    }
-//    cout <<"选中的x轴变量id为："<< this->xID << endl;
-//    return false;
-//
-//}
-//
-//bool vtkLineChartWidget::SetLeftAxisProperty(const std::string& propertyName)
-//{
-//    int varNum = this->propertyList.size();
-//    for (int i = 0; i < varNum; i++)
-//    {
-//        if (this->propertyList[i] == propertyName) {
-//            this->yID = i;
-//            axisStatus[1] = true;
-//            return true;
-//        }
-//    }
-//    return false;
-//}
-
 void vtkLineChartWidget::SetBottomAxisTitle(const std::string& title)
 {
     this->chart->GetAxis(vtkAxis::BOTTOM)->SetTitle(title);//报错了
@@ -148,74 +120,3 @@ void vtkLineChartWidget::RemovePlot(int plotId)
         this->chart->RemovePlot(plotId);
     }
 }
-//bool vtkLineChartWidget::AddPlot(const std::string& xProperty, const std::string& yProperty, const std::string& plotType)
-//{
-//    int xIndex = -1, yIndex = -1;
-//    for (int i = 0; i < propertyList.size(); ++i)
-//    {
-//        if (propertyList[i] == xProperty)
-//            xIndex = i;
-//        if (propertyList[i] == yProperty)
-//            yIndex = i;
-//    }
-//
-//    if (xIndex == -1 || yIndex == -1)
-//    {
-//        std::cerr << "Invalid property name." << std::endl;
-//        return false;
-//    }
-//
-//    vtkPlot* plot = nullptr;
-//    if (plotType == "line")
-//    {
-//        plot = this->chart->AddPlot(vtkChart::LINE);
-//    }
-//    else if (plotType == "point")
-//    {
-//        plot = this->chart->AddPlot(vtkChart::POINTS);
-//    }
-//    else
-//    {
-//        std::cerr << "Invalid plot type specified." << std::endl;
-//        return false;
-//    }
-//
-//    plot->SetInputData(this->table, xIndex, yIndex);
-//    plot->SetColor(rand() % 256, rand() % 256, rand() % 256, 255);
-//    plot->SetWidth(2.0);
-//
-//    AddLegendEntry(plot, xProperty, yProperty);
-//
-//    return true;
-//}
-
-/*void vtkLineChartWidget::AddLegendEntry(vtkPlot* plot, const std::string& xProperty, const std::string& yProperty)
-{
-    std::string legendText = xProperty + " vs " + yProperty;
-
-    // 获取plot的颜色
-    unsigned char color[4];
-    plot->GetPen()->GetColor(color);
-
-    // 创建并设置TextProperty
-    vtkSmartPointer<vtkTextProperty> textProp = vtkSmartPointer<vtkTextProperty>::New();
-    textProp->SetColor(color[0] / 255.0, color[1] / 255.0, color[2] / 255.0);
-    textProp->SetFontSize(12);
-    textProp->SetBold(true);
-    textProp->SetItalic(false);
-
-    // 获取图例
-    vtkSmartPointer<vtkChartLegend> legend = this->chart->GetLegend();
-    if (!legend)
-    {
-        legend = vtkSmartPointer<vtkChartLegend>::New();
-        this->chart->SetLegend(legend);
-    }
-
-    // 获取图例条目索引
-    vtkIdType legendIndex = legend->GetNumberOfEntries();
-
-    // 设置图例条目
-    legend->SetEntry(legendIndex, plot, legendText.c_str());
-    legend->SetEntryTextProperty(legendIndex, textProp);
-}*/
