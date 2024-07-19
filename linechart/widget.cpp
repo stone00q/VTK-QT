@@ -24,17 +24,23 @@ Widget::Widget(QWidget *parent)
     QVBoxLayout* layout = new QVBoxLayout(this);
     layout->addWidget(lineChartWidget);
 
-    //数据的读入
-    TecplotReader reader(R"(D:\Project\VTK_QT\data\Tur_Merge_Field_[2000].dat)");
-    vtkMultiBlockDataSet* multiBlock=reader.readTecplot();
-    //设置vtktecplotwidget
-    lineChartWidget->SetInputData(multiBlock);
+    //数据读入
+    lineChartWidget->SetInputData(R"(D:\Project\VTK_QT\data\test.csv)");
 
-    // 连接信号槽
+    //添加线,只能点一次
+    QPushButton* addFirstPlot = new QPushButton("添加一条线", this);
+    layout->addWidget(addFirstPlot);
+
+    connect(addFirstPlot,&QPushButton::clicked,this,&Widget::addFirstPlot_clicked);
 }
 
 Widget::~Widget()
 {
     delete ui;
+}
+
+void Widget::addFirstPlot_clicked()
+{
+    this->lineChartWidget->AddPlot("Time","Sensor1",1);
 }
 

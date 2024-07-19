@@ -6,96 +6,115 @@ vtkLineChartWidget::vtkLineChartWidget(QWidget *parent)
     QSurfaceFormat::setDefaultFormat(QVTKOpenGLNativeWidget::defaultFormat());
     this->view = vtkSmartPointer<vtkContextView>::New();
     this->renderWindow = vtkSmartPointer<vtkGenericOpenGLRenderWindow>::New();
-    this->view->SetRenderWindow(this->renderWindow);
     this->setRenderWindow(this->renderWindow);
+    this->view->SetRenderWindow(this->renderWindow);
     //获取交互器
     this->qvtkInteractor = this->interactor();
-    this->table = vtkSmartPointer<vtkTable>::New();
     this->chart = vtkSmartPointer<vtkChartXY>::New();
     this->view->GetRenderer()->SetBackground(1,1,1);
     this->view->GetScene()->AddItem(this->chart);
     this->renderWindow->Render();
-    //暂时设置只添加一条线
-    plot = this->chart ->AddPlot(vtkChart::LINE);
+    this->firstLine = this->chart->AddPlot(vtkChart::LINE);
+    this->chart->SetShowLegend(true);
+    this->chart->GetLegend()->SetHorizontalAlignment(vtkChartLegend::RIGHT);
+    this->chart->GetLegend()->SetVerticalAlignment(vtkChartLegend::TOP);
 }
 
 vtkLineChartWidget::~vtkLineChartWidget()
 {
 }
 
-void vtkLineChartWidget::SetInputData(vtkMultiBlockDataSet* inputData)
+void vtkLineChartWidget::SetInputData(std::string fileName)
 {
-    if (inputData == nullptr) {
-        std::cerr << "Input data is nullptr." << std::endl;
-        return;
-    }
-    this->multiBlock = inputData;
-    this->unstructuredGrid = vtkUnstructuredGrid::SafeDownCast(this->multiBlock->GetBlock(0));
-    vtkPointData* pointData = this->unstructuredGrid->GetPointData();
+    auto reader = vtkSmartPointer<vtkDelimitedTextReader>::New();
+    reader->SetFileName(fileName.c_str());
+    reader->DetectNumericColumnsOn();  //对数值列自动检测
+    reader->SetFieldDelimiterCharacters(" ");  //指定列之间的分隔符
+    reader->SetHaveHeaders(true);
+    reader->Update();  //执行读取操作，将文件内容读取到内存中，并准备好输出
 
-    int varNum = pointData->GetNumberOfArrays();
-    QString tmp;
-    std::string stdtmp;
-    for(int i = 0; i < varNum; i++)
+    this->table = reader->GetOutput();
+    int numColumns = table->GetNumberOfColumns();
+    // 检查第一行是否是标题
+    bool hasHeaders = false;
+    std::string columnName = this->table->GetColumnName(0);
+    if (!isdigit(columnName[0]))
     {
-        stdtmp = pointData->GetArrayName(i);
-        std::cout << stdtmp << endl;
-        tmp = QString::fromStdString(stdtmp);
-        this->propertyList.append(tmp);
-
-        vtkDataArray* dataArray = pointData->GetArray(i);
-        this->table->AddColumn(dataArray);
+        hasHeaders = true;
     }
-
+    if (!hasHeaders)
+    {
+        reader->SetHaveHeaders(false);
+        reader->Update();
+        this->table = reader->GetOutput();
+        for (int i = 0; i < numColumns; i++)
+        {
+            std::string columnName = "Field" + std::to_string(i);
+            table->GetColumn(i)->SetName(columnName.c_str());
+            this->colunmsList.push_back(columnName.c_str());
+        }
+    }
+    else
+    {
+        for (int i = 0; i < numColumns; i++)
+        {
+            const char* columnname = this->table->GetColumnName(i);
+            this->colunmsList.push_back(columnname);
+        }
+    }
     this->dataStatus = true;
 }
 
-QList<QString> vtkLineChartWidget::GetPropertiesName()
+QList<QString> vtkLineChartWidget::GetColumnsName()
 {//默认数据是输入了的
-    return this->propertyList;
+    return this->colunmsList;
 }
 
-bool vtkLineChartWidget::SetBottomAxisProperty(const QString& propertyName)
-{
-    if(!this->propertyList.contains(propertyName)){
-        return false;
-    }
-    this->xID = this->propertyList.indexOf(propertyName);
-    axisStatus[0] = true;
-    return true;
-
-}
-
-bool vtkLineChartWidget::SetLeftAxisProperty(const QString& propertyName)
-{
-    if(!this->propertyList.contains(propertyName)){
-        return false;
-    }
-    this->yID = this->propertyList.indexOf(propertyName);
-    axisStatus[1] = true;
-    return true;
-}
 
 void vtkLineChartWidget::SetBottomAxisTitle(const QString& title)
 {
     this->chart->GetAxis(vtkAxis::BOTTOM)->SetTitle(title.toStdString());
-    this->renderWindow->Render();
+    this->chart->GetAxis(vtkAxis::BOTTOM)->GetTitleProperties()->SetFontSize(14);
+    //this->renderWindow->Render();
 }
 void vtkLineChartWidget::SetLeftAxisTitle(const QString& title)
 {
     this->chart->GetAxis(vtkAxis::LEFT)->SetTitle(title.toStdString());
-    this->renderWindow->Render();
+    this->chart->GetAxis(vtkAxis::LEFT)->GetTitleProperties()->SetFontSize(14);
+    //this->renderWindow->Render();
 }
 void vtkLineChartWidget::SetChartTitle(const QString& title)
 {
     this->chart->SetTitle(title.toStdString());
+    this->chart->GetTitleProperties()->SetFontSize(16);
+    //this->renderWindow->Render();
+}
+
+void vtkLineChartWidget::ShowLineChart()
+{
     this->renderWindow->Render();
 }
 
-bool vtkLineChartWidget::ShowLineChart()
-{
-    if(!axisStatus[0]||!axisStatus[1]) return false;
-    this->plot->SetInputData(table,xID,yID);
-    this->renderWindow->Render();
-    return true;
+int vtkLineChartWidget::AddPlot(const std::string& xColumn, const std::string& yColumn, bool plotTypeIsLine)
+{ //1是line，0是point
+    this->lineNum++;
+    if (plotTypeIsLine)
+    {
+        vtkPlot* line = this->chart->AddPlot(vtkChart::LINE);
+        line->SetInputData(this->table, xColumn, yColumn);
+        return lineNum;
+    }
+    else
+    {
+        vtkPlot* line = this->chart->AddPlot(vtkChart::POINTS);
+        line->SetInputData(this->table, xColumn, yColumn);
+        return lineNum;
+    }
+}
+
+void vtkLineChartWidget::RemovePlot(int plotId)
+{//id从1开始
+    if (plotId >= 0 && plotId < this->chart->GetNumberOfPlots()) {
+        this->chart->RemovePlot(plotId);
+    }
 }

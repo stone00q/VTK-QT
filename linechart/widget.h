@@ -18,20 +18,7 @@ public:
     ~Widget();
 
 private slots:
-    void BackgroundButton_clicked();
-    void SolidColorButton_clicked();
-    void TButton_clicked();
-    void XButton_clicked();
-    void CutPlaneButton_clicked();
-    void ColseCutWidget_clicked();
-    void CutButton_clicked();
-    void StreamSeedButton_clicked();
-    void StreamTraceButton_clicked();
-
-    void basicButton1_clicked();
-    void basicButton2_clicked();
-    void slice1Button1_clicked();
-    void slice1Button2_clicked();
+    void addFirstPlot_clicked();
 private:
     Ui::Widget *ui;
     vtkLineChartWidget* lineChartWidget;
