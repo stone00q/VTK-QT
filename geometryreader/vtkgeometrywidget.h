@@ -10,7 +10,7 @@
 #include <vtkCompositePolyDataMapper.h>
 #include <vtkMultiBlockDataSet.h>
 #include <vtkNew.h>
-#include <vtkRegressionTestImage.h>
+
 #include <vtkRenderWindow.h>
 #include <vtkRenderWindowInteractor.h>
 #include <vtkRenderer.h>
@@ -18,8 +18,10 @@
 #include <vtkPolyData.h>
 #include <vtkPolyDataMapper.h>
 #include "vtkOCCTReader.h"
-
-
+#include <vtkDataArray.h>
+#include <vtkProperty.h>
+#include <vtkLookupTable.h>
+#include <vtkCellData.h>
 #include "vtkOCCTReader.h"
 
 #include <vtkAutoInit.h>
@@ -31,12 +33,17 @@ public:
     explicit vtkGeometryWidget(QWidget *parent = 0);
     ~vtkGeometryWidget();
     void SetInputData(QString fileName);
+    void SetColorMapVisibility(bool flag = true, QString propName = "SurfID");
 private:
     vtkSmartPointer<vtkOCCTReader> geoReader;
-
+    // vtkSmartPointer<vtkCompositePolyDataMapper> mapper;
+    vtkSmartPointer<vtkPolyDataMapper> mapper;
+    vtkSmartPointer<vtkLookupTable> lut;
+    vtkSmartPointer<vtkActor> actor;
     vtkSmartPointer<vtkRenderer> renderer;
     vtkSmartPointer<vtkGenericOpenGLRenderWindow> renderWindow;
     vtkSmartPointer<QVTKInteractor> qvtkInteractor;
+
 };
 
 #endif // VTKGEOMETRYWIDGET_H

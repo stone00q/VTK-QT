@@ -20,6 +20,7 @@ public:
 private slots:
     void StepButton_clicked();
     void IgesButton_clicked();
+    void ColorButton_clicked();
 private:
     Ui::Widget *ui;
     vtkGeometryWidget* geometryWidget;

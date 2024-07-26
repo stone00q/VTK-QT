@@ -19,8 +19,11 @@ Widget::Widget(QWidget *parent)
     layout->addWidget(StepButton);
     QPushButton* IgesButton = new QPushButton("读取iges文件",this);
     layout->addWidget(IgesButton);
+    QPushButton* ColorButton = new QPushButton("颜色映射",this);
+    layout->addWidget(ColorButton);
     connect(StepButton,&QPushButton::clicked,this,&Widget::StepButton_clicked);
     connect(IgesButton,&QPushButton::clicked,this,&Widget::IgesButton_clicked);
+    connect(ColorButton,&QPushButton::clicked,this,&Widget::ColorButton_clicked);
 }
 
 Widget::~Widget()
@@ -29,10 +32,14 @@ Widget::~Widget()
 }
 void Widget::StepButton_clicked()
 {//输入文件所在路径
-    QString name = "D:/Project/VTK_QT/data/cylinder.stp";
+    QString name = "D:/Project/VTK_QT/data/f6_clean_dpwII_v2_whole_cf2 v3.step";
     this->geometryWidget->SetInputData(name);
 }
 void Widget::IgesButton_clicked()
-{   QString name = "D:/Project/VTK_QT/data/dlr-f4.iges";
+{   QString name = "D:/Project/VTK_QT/data/Cylinder.iges";
     this->geometryWidget->SetInputData(name);
+}
+void Widget::ColorButton_clicked()
+{
+    this->geometryWidget->SetColorMapVisibility();
 }
